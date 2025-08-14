@@ -1,3 +1,39 @@
-pool: MyAgentPool
+# ASP.NET Core Pipeline
+trigger:
+- main  
+
+pool:
+  vmImage: 'windows-latest'
+
 steps:
-- bash: echo hello world
+# Step 1: Install .NET Core SDK
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '7.x' # Replace with your .NET Core version
+
+# Step 2: Restore dependencies
+- script: |
+    dotnet restore
+  displayName: 'Restore Dependencies'
+
+# Step 3: Build the project
+- script: |
+    dotnet build --configuration Release --no-restore
+  displayName: 'Build Project'
+
+# Step 4: Run tests
+- script: |
+    dotnet test --configuration Release --no-build --verbosity normal
+  displayName: 'Run Tests'
+
+# Step 5: Publish artifacts
+- script: |
+    dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)
+  displayName: 'Publish Artifacts'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'drop'
+    publishLocation: 'Container'
